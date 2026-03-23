@@ -1,114 +1,96 @@
 # DigiClassroom
 
-DigiClassroom is a robust, Django-based Learning Management System (LMS) designed to facilitate seamless interaction between teachers and students. It provides a virtual environment for managing classrooms, sharing resources, and conducting assessments.
+**DigiClassroom** is a comprehensive, Django-based Learning Management System (LMS) designed to bridge the gap between physical and virtual education. It provides a structured environment where teachers can manage classrooms, deliver content through video lectures, post important notices, and conduct automated assessments.
 
-## Features
+The platform distinguishes itself with clean role-separation (Teacher/Student), intuitive navigation, and interactive features like threaded comments on lectures and notices.
 
-### 👥 User Roles
-- **Teacher**: Can create classrooms, post notices, upload video lectures, and create assignments.
-- **Student**: Can join classrooms, view notices, watch lectures, and submit assignments.
+---
 
-### 🏫 Classroom Management
-- **Create Classroom**: Teachers can set up their own virtual classrooms.
-- **Join Classroom**: Students can browse available classrooms and enroll with a single click.
-- **Dashboard**: personalized dashboards for both teachers and students to track their activities.
+## Key Features
 
-### 📢 Notices & Announcements
-- **Post Notices**: Teachers can share important updates and announcements.
-- **Comments**: Students can ask questions or discuss notices through a commenting system.
+### User Roles and Dashboards
+- **Teacher Role**: Dedicated dashboard to manage classrooms, create content, and track student progress.
+- **Student Role**: Personalized dashboard showing enrolled courses, pending assignments, and recent updates.
+- **Profile Management**: Customized profiles for all users distinguishing between teachers and students.
 
-### 🎥 Video Lectures
-- **YouTube Integration**: Teachers can embed educational videos directly from YouTube.
-- **Interactive Learning**: Students can watch lectures and participate in discussions via comments.
+### Classroom Management
+- **Create and Customize**: Teachers can establish new classrooms with titles and descriptions.
+- **Easy Enrollment**: Students can browse available classrooms and enroll with a single click.
+- **One Teacher Per Classroom**: Security model ensures one teacher manages each classroom with multiple students.
 
-### 📝 Assignments & Assessment
-- **Create Assignments**: Teachers can design assignments with multiple-choice questions.
-- **Auto-Grading**: Submissions are automatically graded, providing instant feedback to students.
-- **Submission Tracking**: Teachers can review student submissions and scores.
+### Interactive Video Lectures
+- **YouTube Integration**: Seamlessly embed educational videos from YouTube.
+- **Discussion Threads**: Lectures support threaded comments (including nested replies) for Q&A and discussions.
+- **Organized Chronological Display**: Lectures are listed by most recent creation date.
 
-## Tech Stack
+### Notices and Announcements
+- **Real-time Updates**: Teachers can post important class announcements and updates.
+- **Interactive Discussions**: Notices support threaded comments for student questions and clarifications.
+- **Author and Timestamp Tracking**: Every notice records the author and creation time.
 
-- **Backend**: Django 6.0.2 (Python)
-- **Database**: SQLite (Default, easily swappable)
+### Assignments and Assessment
+- **Quiz Builder**: Teachers can create assignments and add multiple-choice questions with four options each.
+- **Instant Auto-Grading**: Submissions are automatically graded immediately upon completion.
+- **Single Submission Per Student**: System prevents multiple submissions for the same assignment per student.
+- **Personalized Teacher Feedback**: Teachers can review individual submissions and provide text-based feedback.
+
+---
+
+## Technical Architecture
+
+### Framework and Technology Stack
+- **Backend**: Django 6.0.2 with Python
+- **Database**: SQLite (default, easily swappable to PostgreSQL or MySQL)
 - **Frontend**: HTML5, CSS3, Django Template Language
-- **Authentication**: Django Auth System
+- **Authentication**: Django's built-in authentication system with custom profile extensions
 
-## 🚀 Getting Started
+### Modular Application Structure
+The project is organized into six main Django applications:
 
-### Prerequisites
+- **users**: Handles user authentication (signup/login/logout) and profile extensions that distinguish teachers from students.
+- **classrooms**: Core logic for classroom creation, listing, and student enrollment management.
+- **lectures**: Manages video content storage and associated comment threads.
+- **notices**: Handles textual announcements and their interactive comment systems.
+- **assignments**: Complex quiz logic including question creation, choice management, student submissions, and auto-grading.
+- **results**: Placeholder application designed for future analytics and reporting features.
 
-- Python 3.10 or higher
-- pip (Python package manager)
+### Database Relationships
+- **One-to-One**: User to Profile (extends Django User model)
+- **One-to-One**: Teacher to Classroom (each classroom has exactly one teacher)
+- **Many-to-Many**: Students to Classrooms (students can enroll in multiple classrooms)
+- **Foreign Keys**: All content (Lectures, Notices, Assignments, Comments) link to specific classrooms
+- **Hierarchical Comments**: Comment systems support nested replies through parent-child relationships
 
-### Installation
+### Data Models Overview
 
-1.  **Clone the Repository**
-    ```bash
-    git clone https://github.com/yourusername/DigiClassroom.git
-    cd DigiClassroom
-    ```
+#### User and Profile
+- `User`: Django's built-in User model
+- `Profile`: Custom extension storing teacher/student flag
 
-2.  **Create a Virtual Environment**
-    ```bash
-    # Windows
-    python -m venv venv
-    venv/Scripts/activate
+#### Classroom Hierarchy
+- `Classroom`: Container for all classroom content (name, description, teacher, students)
+- `Lecture`: Video content (title, YouTube link, creation timestamp)
+- `LectureComment`: Threaded discussion on lectures (with parent field for replies)
+- `Notice`: Text announcements (title, content, author, timestamp)
+- `NoticeComment`: Threaded discussion on notices (with parent field for replies)
 
-    # macOS/Linux
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+#### Assessment System
+- `Assignment`: Quiz container (title, creation timestamp, classroom reference)
+- `Question`: Individual quiz question (text, assignment reference)
+- `Choice`: Multiple choice options (text, correctness flag)
+- `Submission`: Student submission record (score, teacher feedback, timestamp)
+- `StudentAnswer`: Individual answer record (links submission, question, and selected choice)
 
-3.  **Install Dependencies**
-    ```bash
-    pip install -r requirements.txt
-    ```
+---
 
-4.  **Apply Database Migrations**
-    ```bash
-    cd digiclassrooms
-    python manage.py migrate
-    ```
+## Getting Started
 
-5.  **Create a Superuser (Optional)**
-    To access the Django admin interface:
-    ```bash
-    python manage.py createsuperuser
-    ```
+To set up and run DigiClassroom locally, refer to [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions.
 
-6.  **Run the Development Server**
-    ```bash
-    python manage.py runserver
-    ```
+For email configuration (password resets, notifications), see [EMAIL_SETUP.md](EMAIL_SETUP.md).
 
-7.  **Generate Test Data (Optional)**
-    There is a custom management command to pre-populate the database with dummy users, classrooms, lectures, notices, and assignments. This is helpful for trying out the application quickly.
+---
 
-    ```bash
-    python manage.py create_dummy_data
-    ```
-    
-    This will create:
-    - **Teacher**: `teacher1` (password: `password123`)
-    - **Students**: `student1`, `student2`, `student3` (all passwords: `password123`)
-    - **Classrooms**: Mathematics, Physics
-    - **Content**: Sample Lectures, Notices, Assignments, and Submissions
+## Contributing
 
-8.  **Access the Application**
-    Open your browser and navigate to `http://127.0.0.1:8000/`.
-
-## 📧 Email Configuration
-
-DigiClassroom supports multiple email backends for password resets and notifications. 
-- **Development**: Defaults to console output.
-- **Production**: Supports SMTP (Gmail, SendGrid, etc.).
-
-For detailed configuration instructions, please refer to [EMAIL_SETUP.md](EMAIL_SETUP.md).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Contributions are welcome! Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.

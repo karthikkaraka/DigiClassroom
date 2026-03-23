@@ -31,7 +31,7 @@ class Command(BaseCommand):
             profile, _ = Profile.objects.get_or_create(user=teacher)
             profile.is_teacher = True
             profile.save()
-            self.stdout.write(self.style.SUCCESS(f'✓ Created teacher: {teacher.username}'))
+            self.stdout.write(self.style.SUCCESS(f'Created teacher: {teacher.username}'))
         else:
             self.stdout.write(f'  Teacher {teacher.username} already exists')
         
@@ -58,7 +58,7 @@ class Command(BaseCommand):
                 profile, _ = Profile.objects.get_or_create(user=student)
                 profile.is_teacher = False
                 profile.save()
-                self.stdout.write(self.style.SUCCESS(f'✓ Created student: {student.username}'))
+                self.stdout.write(self.style.SUCCESS(f'Created student: {student.username}'))
             else:
                 self.stdout.write(f'  Student {student.username} already exists')
             students.append(student)
@@ -68,6 +68,11 @@ class Command(BaseCommand):
         
         classroom_data = [
             ('CS101 - Introduction to Computer Science', 'Learn the fundamentals of programming and computer science'),
+            ('MATH201 - Linear Algebra', 'Explore vectors, matrices, and linear transformations'),
+            ('PHYS301 - Classical Mechanics', 'Study motion, forces, and energy in classical physics'),
+            ('DATA401 - Data Structures and Algorithms', 'Master essential data structures and algorithm design patterns'),
+            ('WEB501 - Full Stack Web Development', 'Build modern web applications using frontend and backend technologies'),
+            ('DB601 - Database Design and SQL', 'Design efficient databases and master SQL queries'),
         ]
         
         classrooms = []
@@ -82,7 +87,7 @@ class Command(BaseCommand):
             if created:
                 # Add students to classroom
                 classroom.students.add(*students)
-                self.stdout.write(self.style.SUCCESS(f'✓ Created classroom: {classroom.name}'))
+                self.stdout.write(self.style.SUCCESS(f'Created classroom: {classroom.name}'))
             else:
                 self.stdout.write(f'  Classroom {classroom.name} already exists')
             classrooms.append(classroom)
@@ -108,7 +113,7 @@ class Command(BaseCommand):
                     }
                 )
                 if created:
-                    self.stdout.write(self.style.SUCCESS(f'  ✓ Created lecture: {title}'))
+                    self.stdout.write(self.style.SUCCESS(f'  Created lecture: {title}'))
                     
                     # Add some comments to lectures
                     if students:
@@ -138,7 +143,7 @@ class Command(BaseCommand):
                     }
                 )
                 if created:
-                    self.stdout.write(self.style.SUCCESS(f'  ✓ Created notice: {title}'))
+                    self.stdout.write(self.style.SUCCESS(f'  Created notice: {title}'))
         
         # Create assignments
         self.stdout.write('\nCreating assignments...')
@@ -240,7 +245,7 @@ class Command(BaseCommand):
                     title=assign_info['title'],
                 )
                 if created:
-                    self.stdout.write(self.style.SUCCESS(f'  ✓ Created assignment: {assign_info["title"]}'))
+                    self.stdout.write(self.style.SUCCESS(f'  Created assignment: {assign_info["title"]}'))
                     
                     # Create questions and choices
                     for q_data in assign_info['questions']:
@@ -281,11 +286,18 @@ class Command(BaseCommand):
                         submission.teacher_feedback = "Good effort! Keep practicing."
                         submission.save()
                         
-                        self.stdout.write(f'    ✓ Created sample submission for {students[0].username}')
+                        self.stdout.write(f'    Created sample submission for {students[0].username}')
         
-        self.stdout.write(self.style.SUCCESS('\n✅ Dummy data creation complete!'))
+        self.stdout.write(self.style.SUCCESS('\nDummy data creation complete!'))
         self.stdout.write(self.style.SUCCESS('\nLogin credentials:'))
         self.stdout.write('  Teacher: username=teacher1, password=password123')
         self.stdout.write('  Student: username=student1, password=password123')
         self.stdout.write('  Student: username=student2, password=password123')
         self.stdout.write('  Student: username=student3, password=password123')
+        self.stdout.write(self.style.SUCCESS('\nClassrooms created:'))
+        self.stdout.write('  - CS101 - Introduction to Computer Science')
+        self.stdout.write('  - MATH201 - Linear Algebra')
+        self.stdout.write('  - PHYS301 - Classical Mechanics')
+        self.stdout.write('  - DATA401 - Data Structures and Algorithms')
+        self.stdout.write('  - WEB501 - Full Stack Web Development')
+        self.stdout.write('  - DB601 - Database Design and SQL')
