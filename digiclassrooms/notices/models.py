@@ -13,6 +13,8 @@ class Notice(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_pinned = models.BooleanField(default=False)
+    is_thread_locked = models.BooleanField(default=False)
     
     if TYPE_CHECKING:
         id: int

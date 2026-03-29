@@ -1,4 +1,5 @@
 {% extends 'users/base.html' %}
+{% load tz %}
 {% block title %}{{ classroom.name }} - DigiClassroom{% endblock %}
 
 {% block content %}
@@ -15,7 +16,15 @@
                             <div class="fw-bold"><i class="fas fa-key me-2 text-success"></i>Join Key</div>
                             <div class="fs-5 fw-bold" style="letter-spacing: 0.15em;">{{ classroom.join_key }}</div>
                             {% if classroom.join_key_expires_at %}
-                                <small class="text-muted">Expires in {{ classroom.join_key_expires_at|timeuntil }}</small>
+                                <small class="text-muted d-block">Expires at (your local time)</small>
+                                <small
+                                    class="text-muted text-nowrap"
+                                    id="classroom-detail-expiry-local"
+                                    data-expiry="{{ classroom.join_key_expires_at|date:'c' }}"
+                                >
+                                    {{ classroom.join_key_expires_at|date:"Y-m-d H:i T" }}
+                                </small>
+                                <small class="text-muted d-block mt-1">Server timezone: {{ classroom.join_key_expires_at|date:"Y-m-d H:i T" }}</small>
                             {% endif %}
                         </div>
                         <form method="post" action="{% url 'regenerate_join_key' classroom.pk %}">
@@ -25,6 +34,50 @@
                             </button>
                         </form>
                     </div>
+                </div>
+
+                <div class="mt-3 p-3 rounded" style="background-color: var(--light-bg);">
+                    <div class="fw-bold mb-2"><i class="fas fa-sliders-h me-2 text-primary"></i>Join Settings</div>
+                    <p class="small text-muted mb-2">
+                        Control if students can join and how long each generated key stays valid.
+                    </p>
+                    <form method="post" action="{% url 'update_join_settings' classroom.pk %}">
+                        {% csrf_token %}
+                        <div class="form-check form-switch mb-3">
+                            {{ join_settings_form.joins_enabled }}
+                            <label class="form-check-label" for="{{ join_settings_form.joins_enabled.id_for_label }}">
+                                Allow students to join this class
+                            </label>
+                        </div>
+
+                        <label class="form-label mb-1" for="{{ join_settings_form.join_key_ttl_override_minutes.id_for_label }}">Key duration (TTL: Time To Live) in minutes</label>
+                        {{ join_settings_form.join_key_ttl_override_minutes }}
+                        <div class="form-text mb-2">
+                            TTL means how long a generated key remains valid.
+                            Leave blank to use the default: <strong>{{ default_join_ttl_minutes }} min</strong>.
+                            Current effective TTL: <strong>{{ effective_join_ttl_minutes }} min</strong>.
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">Save Join Settings</button>
+                    </form>
+                </div>
+
+                <div class="mt-3 p-3 rounded" style="background-color: var(--light-bg);">
+                    <div class="fw-bold mb-2"><i class="fas fa-users me-2"></i>Class Roster ({{ students|length }})</div>
+                    {% if students %}
+                        <ul class="list-group list-group-flush">
+                            {% for student in students %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-user-graduate me-2 text-success"></i>{{ student.username }}</span>
+                                    <form method="post" action="{% url 'remove_student' classroom.pk student.pk %}" onsubmit="return confirm('Remove this student from the classroom?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">No students enrolled yet.</p>
+                    {% endif %}
                 </div>
             {% else %}
                 <span class="badge bg-success"><i class="fas fa-user-graduate me-1"></i>Student</span>
@@ -77,4 +130,37 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const expiryEl = document.getElementById('classroom-detail-expiry-local');
+    if (!expiryEl) {
+        return;
+    }
+
+    const raw = expiryEl.getAttribute('data-expiry');
+    if (!raw) {
+        return;
+    }
+
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) {
+        return;
+    }
+
+    const formatted = new Intl.DateTimeFormat(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZoneName: 'short'
+    }).format(dt);
+
+    expiryEl.textContent = formatted;
+});
+</script>
 {% endblock %}

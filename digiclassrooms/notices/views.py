@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from classrooms.models import Classroom
 from .models import Notice, NoticeComment
 from .forms import NoticeForm, NoticeCommentForm
@@ -7,7 +8,7 @@ from .forms import NoticeForm, NoticeCommentForm
 @login_required(login_url='login')
 def notice_list(request, classroom_pk):
     classroom = get_object_or_404(Classroom, pk=classroom_pk)
-    notices = classroom.notices.all().order_by('-created_at')
+    notices = classroom.notices.all().order_by('-is_pinned', '-created_at')
     is_teacher = request.user == classroom.teacher
     return render(request, 'notices/notice_list.html', {
         'classroom': classroom, 'notices': notices, 'is_teacher': is_teacher
@@ -37,6 +38,10 @@ def notice_detail(request, pk):
     comments = notice.comments.filter(parent__isnull=True).order_by('created_at')
     
     if request.method == 'POST':
+        if notice.is_thread_locked and request.user != notice.classroom.teacher:
+            messages.error(request, 'This thread is locked by the teacher.')
+            return redirect('notice_detail', pk=pk)
+
         form = NoticeCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -56,6 +61,30 @@ def notice_detail(request, pk):
     return render(request, 'notices/notice_detail.html', {
         'notice': notice, 'comments': comments, 'form': form, 'is_teacher': is_teacher
     })
+
+
+@login_required(login_url='login')
+def toggle_notice_pin(request, pk):
+    notice = get_object_or_404(Notice, pk=pk)
+    if request.user != notice.classroom.teacher or request.method != 'POST':
+        return redirect('notice_detail', pk=pk)
+
+    notice.is_pinned = not notice.is_pinned
+    notice.save(update_fields=['is_pinned'])
+    messages.success(request, 'Notice pin state updated.')
+    return redirect('notice_detail', pk=pk)
+
+
+@login_required(login_url='login')
+def toggle_notice_thread_lock(request, pk):
+    notice = get_object_or_404(Notice, pk=pk)
+    if request.user != notice.classroom.teacher or request.method != 'POST':
+        return redirect('notice_detail', pk=pk)
+
+    notice.is_thread_locked = not notice.is_thread_locked
+    notice.save(update_fields=['is_thread_locked'])
+    messages.success(request, 'Notice thread lock updated.')
+    return redirect('notice_detail', pk=pk)
 
 @login_required(login_url='login')
 def edit_notice_comment(request, comment_id):

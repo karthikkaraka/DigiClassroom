@@ -13,6 +13,10 @@
                     <div class="col-md-6">
                         <p class="mb-2"><strong><i class="fas fa-user me-2 text-primary"></i>Student:</strong> {{ submission.student.username }}</p>
                         <p class="mb-0"><strong><i class="fas fa-clipboard me-2 text-primary"></i>Assignment:</strong> {{ submission.assignment.title }}</p>
+                        <p class="mb-0 mt-2"><strong><i class="fas fa-redo me-2 text-primary"></i>Attempt:</strong> {{ submission.attempt_number }}</p>
+                        {% if submission.is_late %}
+                            <p class="mb-0 mt-1 text-warning"><strong><i class="fas fa-exclamation-triangle me-2"></i>Late submission{% if submission.late_penalty_percent %} ({{ submission.late_penalty_percent }}% penalty){% endif %}</strong></p>
+                        {% endif %}
                     </div>
                     <div class="col-md-6 text-md-end">
                         <div class="display-6 fw-bold text-success">

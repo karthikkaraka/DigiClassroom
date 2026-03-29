@@ -12,6 +12,7 @@ class Lecture(models.Model):
     youtube_link = models.URLField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_thread_locked = models.BooleanField(default=False)
     
     if TYPE_CHECKING:
         id: int

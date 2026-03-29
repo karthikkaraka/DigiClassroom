@@ -4,10 +4,27 @@ from .models import Assignment
 class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
-        fields = ['title']
+        fields = ['title', 'due_date', 'late_submission_policy', 'late_penalty_percent', 'max_attempts']
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Chapter 1 Quiz'})
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Chapter 1 Quiz'}),
+            'due_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'late_submission_policy': forms.Select(attrs={'class': 'form-select'}),
+            'late_penalty_percent': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100}),
+            'max_attempts': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        policy = cleaned.get('late_submission_policy')
+        penalty = cleaned.get('late_penalty_percent') or 0
+
+        if policy == Assignment.LATE_POLICY_PENALTY and penalty <= 0:
+            self.add_error('late_penalty_percent', 'Set a positive late penalty percentage.')
+
+        if policy != Assignment.LATE_POLICY_PENALTY:
+            cleaned['late_penalty_percent'] = 0
+
+        return cleaned
 
 class QuestionForm(forms.Form):
     question_text = forms.CharField(

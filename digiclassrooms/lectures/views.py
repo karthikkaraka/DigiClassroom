@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from classrooms.models import Classroom
 from .models import Lecture, LectureComment
 from .forms import LectureForm, LectureCommentForm
@@ -36,6 +37,10 @@ def lecture_detail(request, pk):
     comments = lecture.comments.filter(parent__isnull=True).order_by('created_at') # pyright: ignore[reportAttributeAccessIssue]
     
     if request.method == 'POST':
+        if lecture.is_thread_locked and request.user != lecture.classroom.teacher:
+            messages.error(request, 'This discussion is locked by the teacher.')
+            return redirect('lecture_detail', pk=pk)
+
         form = LectureCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -55,6 +60,18 @@ def lecture_detail(request, pk):
     return render(request, 'lectures/lecture_detail.html', {
         'lecture': lecture, 'comments': comments, 'form': form, 'is_teacher': is_teacher
     })
+
+
+@login_required(login_url='login')
+def toggle_lecture_thread_lock(request, pk):
+    lecture = get_object_or_404(Lecture, pk=pk)
+    if request.user != lecture.classroom.teacher or request.method != 'POST':
+        return redirect('lecture_detail', pk=pk)
+
+    lecture.is_thread_locked = not lecture.is_thread_locked
+    lecture.save(update_fields=['is_thread_locked'])
+    messages.success(request, 'Lecture discussion lock updated.')
+    return redirect('lecture_detail', pk=pk)
 
 @login_required(login_url='login')
 def edit_lecture_comment(request, comment_id):

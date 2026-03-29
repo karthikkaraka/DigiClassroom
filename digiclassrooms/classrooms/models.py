@@ -22,6 +22,8 @@ class Classroom(models.Model):
     description = models.TextField(blank=True)
     join_key = models.CharField(max_length=8, unique=True, default='', editable=False)
     join_key_expires_at = models.DateTimeField(null=True, blank=True)
+    join_key_ttl_override_minutes = models.PositiveIntegerField(null=True, blank=True)
+    joins_enabled = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     
     if TYPE_CHECKING:
@@ -38,12 +40,17 @@ class Classroom(models.Model):
         if not self.join_key:
             self.join_key = self.generate_unique_join_key()
         if self.join_key and not self.join_key_expires_at:
-            self.join_key_expires_at = timezone.now() + timedelta(minutes=self.join_key_ttl_minutes())
+            self.join_key_expires_at = timezone.now() + timedelta(minutes=self.get_join_key_ttl_minutes())
         super().save(*args, **kwargs)
     
     @staticmethod
     def join_key_ttl_minutes() -> int:
         return int(getattr(settings, 'CLASSROOM_JOIN_KEY_TTL_MINUTES', 60))
+
+    def get_join_key_ttl_minutes(self) -> int:
+        if self.join_key_ttl_override_minutes:
+            return int(self.join_key_ttl_override_minutes)
+        return self.join_key_ttl_minutes()
 
     @classmethod
     def generate_unique_join_key(cls) -> str:
@@ -68,5 +75,5 @@ class Classroom(models.Model):
     def regenerate_join_key(self):
         """Regenerate a new join key for this classroom"""
         self.join_key = self.generate_unique_join_key()
-        self.join_key_expires_at = timezone.now() + timedelta(minutes=self.join_key_ttl_minutes())
+        self.join_key_expires_at = timezone.now() + timedelta(minutes=self.get_join_key_ttl_minutes())
         self.save(update_fields=['join_key', 'join_key_expires_at'])

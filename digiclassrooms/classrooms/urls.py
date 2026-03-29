@@ -12,4 +12,6 @@ urlpatterns = [
     path('search/', views.search_classrooms, name='search_classrooms'),
     path('classroom/<int:pk>/', views.classroom_detail, name='classroom_detail'),
     path('classroom/<int:pk>/regenerate-key/', views.regenerate_join_key, name='regenerate_join_key'),
+    path('classroom/<int:pk>/join-settings/', views.update_join_settings, name='update_join_settings'),
+    path('classroom/<int:pk>/students/<int:student_id>/remove/', views.remove_student, name='remove_student'),
 ]

@@ -11,6 +11,16 @@
                     <span class="badge bg-light text-dark">{{ assignment.questions.all|length }} Questions</span>
                 </div>
             </div>
+            <div class="card-body">
+                <small class="text-muted d-block">
+                    <i class="far fa-clock me-1"></i>Due:
+                    {% if assignment.due_date %}{{ assignment.due_date|date:"Y-m-d H:i T" }}{% else %}No due date{% endif %}
+                </small>
+                <small class="text-muted d-block">
+                    <i class="fas fa-hourglass-half me-1"></i>Late policy: {{ assignment.get_late_submission_policy_display }}
+                    {% if assignment.late_submission_policy == 'penalty' %} ({{ assignment.late_penalty_percent }}% penalty){% endif %}
+                </small>
+            </div>
         </div>
         
         <form method="post">
@@ -26,7 +36,7 @@
                             {% for choice in q.choices.all %}
                                 <label class="list-group-item list-group-item-action" style="cursor: pointer;">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="question_{{ q.id }}" value="{{ choice.id }}" id="choice_{{ choice.id }}" required>
+                                        <input class="form-check-input" type="radio" name="question_{{ q.id }}" value="{{ choice.id }}" id="choice_{{ choice.id }}">
                                         <label class="form-check-label ms-2" for="choice_{{ choice.id }}" style="cursor: pointer;">
                                             {{ choice.text }}
                                         </label>
@@ -41,9 +51,14 @@
             <div class="card border-success">
                 <div class="card-body text-center py-4">
                     <p class="text-muted mb-3"><i class="fas fa-info-circle me-2"></i>Review your answers before submitting</p>
-                    <button type="submit" class="btn btn-success btn-lg">
-                        <i class="fas fa-paper-plane me-2"></i>Submit Answers
-                    </button>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <button type="submit" name="action" value="save_draft" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Save Draft
+                        </button>
+                        <button type="submit" name="action" value="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Answers
+                        </button>
+                    </div>
                 </div>
             </div>
         </form>
@@ -61,4 +76,25 @@
         border-color: var(--primary-color);
     }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+{{ draft_answers|json_script:"draft-answers" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const draftData = document.getElementById('draft-answers');
+    if (!draftData) {
+        return;
+    }
+
+    const draftAnswers = JSON.parse(draftData.textContent);
+    Object.keys(draftAnswers).forEach(function (questionId) {
+        const choiceId = draftAnswers[questionId];
+        const input = document.querySelector(`input[name="question_${questionId}"][value="${choiceId}"]`);
+        if (input) {
+            input.checked = true;
+        }
+    });
+});
+</script>
 {% endblock %}

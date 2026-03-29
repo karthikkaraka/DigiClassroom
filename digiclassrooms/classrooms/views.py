@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from .models import Classroom
-from .forms import ClassroomForm, JoinClassroomForm
+from .forms import ClassroomForm, JoinClassroomForm, ClassJoinSettingsForm
 
 @login_required(login_url='login')
 def home(request):
@@ -21,26 +22,19 @@ def home(request):
 def teacher_dashboard(request):
     if not hasattr(request.user, 'profile') or not request.user.profile.is_teacher:
         return redirect('student_dashboard')
-        
+
     try:
         classroom = request.user.teaching_classroom
-        notices = classroom.notices.all().order_by('-created_at')[:5]
-        lectures = classroom.lectures.all().order_by('-created_at')[:5]
-        assignments = classroom.assignments.all().order_by('-created_at')[:5]
     except Classroom.DoesNotExist:
         return redirect('setup_classroom')
-        
-    return render(request, 'classrooms/teacher_home.html', {
-        'classroom': classroom,
-        'notices': notices,
-        'lectures': lectures,
-        'assignments': assignments,
-    })
+
+    # Use the classroom dashboard as the single teacher landing page.
+    return redirect('classroom_detail', pk=classroom.pk)
 
 @login_required(login_url='login')
 def student_dashboard(request):
     enrolled_classrooms = request.user.enrolled_classrooms.all()
-    available_classrooms = Classroom.objects.exclude(students=request.user)
+    available_classrooms = Classroom.objects.exclude(students=request.user).filter(joins_enabled=True)
     return render(request, 'classrooms/student_home.html', {
         'enrolled_classrooms': enrolled_classrooms,
         'available_classrooms': available_classrooms
@@ -95,6 +89,10 @@ def join_classroom(request, pk=None):
                 messages.error(request, 'Invalid join key.')
                 return redirect('join_classroom')
 
+            if not target_classroom.joins_enabled:
+                messages.error(request, 'Joining is currently disabled for this classroom.')
+                return redirect('join_classroom')
+
             if not target_classroom.is_join_key_valid(join_key):
                 if target_classroom.join_key_expires_at and timezone.now() > target_classroom.join_key_expires_at:
                     messages.error(request, 'That join key has expired. Ask your teacher for a new key.')
@@ -125,11 +123,50 @@ def regenerate_join_key(request, pk):
         return redirect('teacher_dashboard')
 
     classroom.regenerate_join_key()
+    expires_local = timezone.localtime(classroom.join_key_expires_at)
     messages.success(
         request,
-        f'New join key generated: {classroom.join_key} (expires at {classroom.join_key_expires_at:%Y-%m-%d %H:%M UTC})'
+        f'New join key generated: {classroom.join_key} (expires at {expires_local.isoformat(timespec="minutes")})'
     )
     return redirect('teacher_dashboard')
+
+
+@login_required(login_url='login')
+def update_join_settings(request, pk):
+    classroom = get_object_or_404(Classroom, pk=pk)
+    if not hasattr(request.user, 'profile') or not request.user.profile.is_teacher or request.user != classroom.teacher:
+        messages.error(request, 'Only the classroom teacher can update join settings.')
+        return redirect('home')
+
+    if request.method != 'POST':
+        return redirect('teacher_dashboard')
+
+    form = ClassJoinSettingsForm(request.POST, instance=classroom)
+    if form.is_valid():
+        classroom = form.save(commit=False)
+        if classroom.join_key:
+            classroom.join_key_expires_at = timezone.now() + timedelta(minutes=classroom.get_join_key_ttl_minutes())
+        classroom.save()
+        messages.success(request, 'Join settings updated.')
+    else:
+        messages.error(request, 'Unable to update join settings. Please check the form values.')
+
+    return redirect('teacher_dashboard')
+
+
+@login_required(login_url='login')
+def remove_student(request, pk, student_id):
+    classroom = get_object_or_404(Classroom, pk=pk)
+    if request.user != classroom.teacher:
+        messages.error(request, 'Only the classroom teacher can remove students.')
+        return redirect('classroom_detail', pk=pk)
+
+    if request.method != 'POST':
+        return redirect('classroom_detail', pk=pk)
+
+    classroom.students.remove(student_id)
+    messages.success(request, 'Student removed from classroom.')
+    return redirect('classroom_detail', pk=pk)
 
 @login_required(login_url='login')
 def classroom_detail(request, pk):
@@ -143,6 +180,10 @@ def classroom_detail(request, pk):
     context = {
         'classroom': classroom,
         'is_teacher': is_teacher,
+        'students': classroom.students.order_by('username'),
+        'join_settings_form': ClassJoinSettingsForm(instance=classroom),
+        'default_join_ttl_minutes': Classroom.join_key_ttl_minutes(),
+        'effective_join_ttl_minutes': classroom.get_join_key_ttl_minutes(),
     }
     return render(request, 'classrooms/classroom_detail.html', context)
 
@@ -156,13 +197,13 @@ def classroom_lectures(request, pk):
 
 @login_required(login_url='login')
 def classroom_assignments(request, pk):
-    return redirect('assignments_list', classroom_pk=pk)
+    return redirect('assignment_list', classroom_pk=pk)
 
 @login_required(login_url='login')
 def search_classrooms(request):
     """Search available classrooms by name, description, or teacher"""
     query = request.GET.get('q', '').strip()
-    classrooms = Classroom.objects.exclude(students=request.user)
+    classrooms = Classroom.objects.exclude(students=request.user).filter(joins_enabled=True)
     
     if query:
         classrooms = classrooms.filter(

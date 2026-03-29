@@ -69,3 +69,24 @@ class JoinKeyTests(TestCase):
 		resp = self.client.post(url, data={'join_key': self.classroom.join_key})
 		self.assertEqual(resp.status_code, 302)
 		self.assertFalse(self.classroom.students.filter(pk=self.teacher.pk).exists())
+
+	def test_student_cannot_join_when_joins_disabled(self):
+		self.classroom.joins_enabled = False
+		self.classroom.save(update_fields=['joins_enabled'])
+
+		self.client.login(username='student', password='pass12345')
+		url = reverse('join_classroom_for_classroom', kwargs={'pk': self.classroom.pk})
+		resp = self.client.post(url, data={'join_key': self.classroom.join_key})
+		self.assertEqual(resp.status_code, 302)
+		self.assertFalse(self.classroom.students.filter(pk=self.student.pk).exists())
+
+	def test_regenerate_uses_classroom_ttl_override(self):
+		self.classroom.join_key_ttl_override_minutes = 5
+		self.classroom.save(update_fields=['join_key_ttl_override_minutes'])
+
+		self.classroom.regenerate_join_key()
+		self.classroom.refresh_from_db()
+
+		delta = self.classroom.join_key_expires_at - timezone.now()
+		self.assertLessEqual(delta.total_seconds(), 5 * 60 + 5)
+		self.assertGreater(delta.total_seconds(), 4 * 60)

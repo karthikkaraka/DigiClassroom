@@ -27,3 +27,25 @@ class JoinClassroomForm(forms.Form):
 
     def clean_join_key(self):
         return self.cleaned_data['join_key'].strip().upper()
+
+
+class ClassJoinSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Classroom
+        fields = ['joins_enabled', 'join_key_ttl_override_minutes']
+        widgets = {
+            'joins_enabled': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'join_key_ttl_override_minutes': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': 1,
+                    'placeholder': 'Leave blank to use global default',
+                }
+            ),
+        }
+
+    def clean_join_key_ttl_override_minutes(self):
+        ttl = self.cleaned_data.get('join_key_ttl_override_minutes')
+        if ttl is not None and ttl < 1:
+            raise forms.ValidationError('TTL must be at least 1 minute.')
+        return ttl
