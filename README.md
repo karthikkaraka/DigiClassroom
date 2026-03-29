@@ -87,13 +87,7 @@ The project is organized into six main Django applications:
 
 To set up and run DigiClassroom locally, refer to [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions.
 
-For email configuration (password resets, notifications), see [EMAIL_SETUP.md](EMAIL_SETUP.md).
-
-For feature details and planned enhancements, see [FEATURES.md](FEATURES.md).
-
-For implementation details of the new features, see [IMPLEMENTATION.md](IMPLEMENTATION.md).
-
----
+For detailed configuration instructions, please refer to [EMAIL_SETUP.md](EMAIL_SETUP.md).
 
 ## Contributing
 
