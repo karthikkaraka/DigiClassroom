@@ -57,13 +57,9 @@
                                 <small class="text-muted d-block mb-2">
                                     <i class="fas fa-users me-1"></i>{{ classroom.students.count }} student{{ classroom.students.count|pluralize }}
                                 </small>
-                                <form method="post" action="{% url 'enroll_classroom' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="classroom_id" value="{{ classroom.pk }}">
-                                    <button type="submit" class="btn btn-success btn-sm w-100">
-                                        <i class="fas fa-user-plus me-1"></i>Enroll in Class
-                                    </button>
-                                </form>
+                                <a href="{% url 'join_classroom_for_classroom' classroom.pk %}" class="btn btn-success btn-sm w-100">
+                                    <i class="fas fa-key me-1"></i>Join with Key
+                                </a>
                             </div>
                         </div>
                     </div>

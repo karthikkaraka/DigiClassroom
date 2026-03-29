@@ -8,8 +8,8 @@
         <p class="text-muted">Welcome back, {{ user.username }}!</p>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{% url 'search_classrooms' %}" class="btn btn-success">
-            <i class="fas fa-search me-2"></i>Find Classes to Join
+        <a href="{% url 'join_classroom' %}" class="btn btn-success">
+            <i class="fas fa-key me-2"></i>Join with Key
         </a>
     </div>
 </div>
@@ -41,8 +41,8 @@
                     <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
                     <h4 class="text-muted">No Classes Yet</h4>
                     <p class="text-muted mb-3">You haven't enrolled in any classrooms yet.</p>
-                    <a href="{% url 'enroll_classroom' %}" class="btn btn-success btn-lg">
-                        <i class="fas fa-search me-2"></i>Browse Available Classes
+                    <a href="{% url 'join_classroom' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-key me-2"></i>Join with Key
                     </a>
                 </div>
             </div>
@@ -50,30 +50,11 @@
     {% endfor %}
 </div>
 
-{% if available_classrooms %}
 <div class="mt-5">
-    <h4 class="fw-bold mb-3"><i class="fas fa-compass text-secondary me-2"></i>Available Classes</h4>
-    <div class="row">
-        {% for classroom in available_classrooms %}
-            <div class="col-md-3 mb-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h6 class="card-title fw-bold">{{ classroom.name }}</h6>
-                        <p class="card-text small text-muted">
-                            <i class="fas fa-user me-1"></i>{{ classroom.teacher.username }}
-                        </p>
-                        <form method="post" action="{% url 'enroll_classroom' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="classroom_id" value="{{ classroom.pk }}">
-                            <button type="submit" class="btn btn-sm btn-outline-success w-100">
-                                <i class="fas fa-user-plus me-1"></i>Enroll
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
+    <h4 class="fw-bold mb-3"><i class="fas fa-search text-secondary me-2"></i>Explore Classes</h4>
+    <p class="text-muted mb-3">You can browse classes, but you need a valid join key to join.</p>
+    <a href="{% url 'search_classrooms' %}" class="btn btn-outline-primary">
+        <i class="fas fa-search me-2"></i>Search Classes
+    </a>
 </div>
-{% endif %}
 {% endblock %}

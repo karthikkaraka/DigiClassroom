@@ -99,6 +99,11 @@ STATIC_URL = 'static/'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 
+# Classroom join key settings
+# Students can only join a classroom using a valid join key.
+# Keys expire after this many minutes (teacher can regenerate anytime).
+CLASSROOM_JOIN_KEY_TTL_MINUTES = 60
+
 # Email Configuration
 # For development: emails will be printed to console
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

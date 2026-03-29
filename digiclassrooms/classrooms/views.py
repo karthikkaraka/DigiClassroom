@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.utils import timezone
 from .models import Classroom
-from .forms import ClassroomForm
+from .forms import ClassroomForm, JoinClassroomForm
 
 @login_required(login_url='login')
 def home(request):
@@ -65,12 +67,69 @@ def setup_classroom(request):
 
 @login_required(login_url='login')
 def enroll_classroom(request):
+    # Backward-compatible endpoint: redirect to the key-based join flow.
+    return redirect('join_classroom')
+
+
+@login_required(login_url='login')
+def join_classroom(request, pk=None):
+    """Join a classroom using its time-limited join key."""
+    if hasattr(request.user, 'profile') and getattr(request.user.profile, 'is_teacher', False):
+        messages.error(request, 'Teachers cannot join classrooms as students.')
+        return redirect('teacher_dashboard')
+
+    classroom = None
+    if pk is not None:
+        classroom = get_object_or_404(Classroom, pk=pk)
+
     if request.method == 'POST':
-        classroom_id = request.POST.get('classroom_id')
-        if classroom_id:
-            classroom = get_object_or_404(Classroom, pk=int(classroom_id))
-            classroom.students.add(request.user)
-    return redirect('student_dashboard')
+        form = JoinClassroomForm(request.POST)
+        if form.is_valid():
+            join_key = form.cleaned_data['join_key']
+
+            target_classroom = classroom
+            if target_classroom is None:
+                target_classroom = Classroom.objects.filter(join_key__iexact=join_key).first()
+
+            if not target_classroom:
+                messages.error(request, 'Invalid join key.')
+                return redirect('join_classroom')
+
+            if not target_classroom.is_join_key_valid(join_key):
+                if target_classroom.join_key_expires_at and timezone.now() > target_classroom.join_key_expires_at:
+                    messages.error(request, 'That join key has expired. Ask your teacher for a new key.')
+                else:
+                    messages.error(request, 'Invalid join key for this classroom.')
+                return redirect('join_classroom_for_classroom', pk=target_classroom.pk)
+
+            target_classroom.students.add(request.user)
+            messages.success(request, f'Joined "{target_classroom.name}" successfully!')
+            return redirect('classroom_detail', pk=target_classroom.pk)
+    else:
+        form = JoinClassroomForm()
+
+    return render(request, 'classrooms/join_classroom.html', {
+        'form': form,
+        'classroom': classroom,
+    })
+
+
+@login_required(login_url='login')
+def regenerate_join_key(request, pk):
+    classroom = get_object_or_404(Classroom, pk=pk)
+    if not hasattr(request.user, 'profile') or not request.user.profile.is_teacher or request.user != classroom.teacher:
+        messages.error(request, 'Only the classroom teacher can regenerate the join key.')
+        return redirect('home')
+
+    if request.method != 'POST':
+        return redirect('teacher_dashboard')
+
+    classroom.regenerate_join_key()
+    messages.success(
+        request,
+        f'New join key generated: {classroom.join_key} (expires at {classroom.join_key_expires_at:%Y-%m-%d %H:%M UTC})'
+    )
+    return redirect('teacher_dashboard')
 
 @login_required(login_url='login')
 def classroom_detail(request, pk):
