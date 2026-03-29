@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.core.paginator import Paginator
 from .models import Classroom
 from .forms import ClassroomForm
 
@@ -96,3 +98,27 @@ def classroom_lectures(request, pk):
 @login_required(login_url='login')
 def classroom_assignments(request, pk):
     return redirect('assignments_list', classroom_pk=pk)
+
+@login_required(login_url='login')
+def search_classrooms(request):
+    """Search available classrooms by name, description, or teacher"""
+    query = request.GET.get('q', '').strip()
+    classrooms = Classroom.objects.exclude(students=request.user)
+    
+    if query:
+        classrooms = classrooms.filter(
+            Q(name__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(teacher__first_name__icontains=query) |
+            Q(teacher__last_name__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(classrooms, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'classrooms/search.html', {
+        'page_obj': page_obj,
+        'query': query
+    })

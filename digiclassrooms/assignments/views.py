@@ -124,3 +124,45 @@ def submission_detail(request, pk):
         'answers': answers,
         'is_teacher': is_teacher
     })
+
+@login_required(login_url='login')
+def edit_assignment(request, pk):
+    """Edit an assignment"""
+    assignment = get_object_or_404(Assignment, pk=pk)
+    
+    # Check permission: only teacher can edit
+    if request.user != assignment.classroom.teacher:
+        return redirect('assignment_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST, instance=assignment)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.updated_at = __import__('django.utils.timezone', fromlist=['now']).now()
+            assignment.save()
+            return redirect('assignment_detail', pk=pk)
+    else:
+        form = AssignmentForm(instance=assignment)
+    
+    return render(request, 'assignments/assignment_form.html', {
+        'form': form,
+        'assignment': assignment,
+        'classroom': assignment.classroom,
+        'edit': True
+    })
+
+@login_required(login_url='login')
+def delete_assignment(request, pk):
+    """Delete an assignment"""
+    assignment = get_object_or_404(Assignment, pk=pk)
+    classroom = assignment.classroom
+    
+    # Check permission: only teacher can delete
+    if request.user != classroom.teacher:
+        return redirect('assignment_detail', pk=pk)
+    
+    if request.method == 'POST':
+        assignment.delete()
+        return redirect('assignments_list', classroom_pk=classroom.pk)
+    
+    return render(request, 'assignments/delete_assignment.html', {'assignment': assignment})

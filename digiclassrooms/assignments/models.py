@@ -10,6 +10,8 @@ class Assignment(models.Model):
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    due_date = models.DateTimeField(null=True, blank=True)
     
     if TYPE_CHECKING:
         id: int

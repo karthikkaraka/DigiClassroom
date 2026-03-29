@@ -50,6 +50,93 @@ def notice_detail(request, pk):
     else:
         form = NoticeCommentForm()
         
+    # Check if user is teacher
+    is_teacher = request.user == notice.classroom.teacher
+    
     return render(request, 'notices/notice_detail.html', {
-        'notice': notice, 'comments': comments, 'form': form
+        'notice': notice, 'comments': comments, 'form': form, 'is_teacher': is_teacher
     })
+
+@login_required(login_url='login')
+def edit_notice_comment(request, comment_id):
+    """Edit a notice comment"""
+    comment = get_object_or_404(NoticeComment, pk=comment_id)
+    notice = comment.notice
+    
+    # Check permission: only comment author or teacher can edit
+    if request.user != comment.author and request.user != notice.classroom.teacher:
+        return redirect('notice_detail', pk=notice.pk)
+    
+    if request.method == 'POST':
+        form = NoticeCommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.is_edited = True
+            comment.save()
+            return redirect('notice_detail', pk=notice.pk)
+    else:
+        form = NoticeCommentForm(instance=comment)
+    
+    return render(request, 'notices/edit_comment.html', {
+        'form': form,
+        'comment': comment,
+        'notice': notice
+    })
+
+@login_required(login_url='login')
+def delete_notice_comment(request, comment_id):
+    """Delete a notice comment"""
+    comment = get_object_or_404(NoticeComment, pk=comment_id)
+    notice = comment.notice
+    
+    # Check permission: only comment author or teacher can delete
+    if request.user != comment.author and request.user != notice.classroom.teacher:
+        return redirect('notice_detail', pk=notice.pk)
+    
+    if request.method == 'POST':
+        comment.delete()
+        return redirect('notice_detail', pk=notice.pk)
+    
+    return render(request, 'notices/delete_comment.html', {'comment': comment})
+
+@login_required(login_url='login')
+def edit_notice(request, pk):
+    """Edit a notice"""
+    notice = get_object_or_404(Notice, pk=pk)
+    
+    # Check permission: only teacher can edit
+    if request.user != notice.classroom.teacher:
+        return redirect('notice_detail', pk=pk)
+    
+    if request.method == 'POST':
+        form = NoticeForm(request.POST, instance=notice)
+        if form.is_valid():
+            notice = form.save(commit=False)
+            notice.updated_at = __import__('django.utils.timezone', fromlist=['now']).now()
+            notice.save()
+            return redirect('notice_detail', pk=pk)
+    else:
+        form = NoticeForm(instance=notice)
+    
+    return render(request, 'notices/notice_form.html', {
+        'form': form,
+        'notice': notice,
+        'classroom': notice.classroom,
+        'edit': True
+    })
+
+@login_required(login_url='login')
+def delete_notice(request, pk):
+    """Delete a notice"""
+    notice = get_object_or_404(Notice, pk=pk)
+    classroom = notice.classroom
+    
+    # Check permission: only teacher can delete
+    if request.user != classroom.teacher:
+        return redirect('notice_detail', pk=pk)
+    
+    if request.method == 'POST':
+        notice.delete()
+        return redirect('notices_list', classroom_pk=classroom.pk)
+    
+    return render(request, 'notices/delete_notice.html', {'notice': notice})

@@ -65,7 +65,22 @@ Demo Credentials:
 - Teacher: `teacher1` (password: `password123`)
 - Student: `student1` (password: `password123`)
 
-### 7. Run Development Server
+The demo data includes unique join keys for each classroom that students can use to enroll.
+
+### 7. Generate Join Keys for Existing Classrooms (If Needed)
+
+If you have existing classrooms without join keys, generate them:
+
+```bash
+python manage.py generate_join_keys
+```
+
+To regenerate all classroom keys:
+```bash
+python manage.py generate_join_keys --all
+```
+
+### 8. Run Development Server
 
 ```bash
 python manage.py runserver

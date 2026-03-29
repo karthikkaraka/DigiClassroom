@@ -2,17 +2,35 @@
 <div class="card mb-3 shadow-sm" style="margin-left: {{ depth }}rem;">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2">
-            <strong class="{% if depth == 0 %}text-primary{% else %}text-success{% endif %}">
-                <i class="fas fa-user-circle me-1"></i>{{ comment.author.username }}
-            </strong>
+            <div>
+                <strong class="{% if depth == 0 %}text-primary{% else %}text-success{% endif %}">
+                    <i class="fas fa-user-circle me-1"></i>{{ comment.author.username }}
+                </strong>
+                {% if comment.is_edited %}
+                    <small class="text-muted ms-2">(edited)</small>
+                {% endif %}
+            </div>
             <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
         </div>
         <p class="mb-2">{{ comment.content }}</p>
-        <button class="btn btn-sm btn-link p-0 text-decoration-none reply-btn" 
-                data-comment-id="{{ comment.id }}" 
-                data-author="{{ comment.author.username }}">
-            <i class="fas fa-reply me-1"></i>Reply
-        </button>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-sm btn-link p-0 text-decoration-none reply-btn" 
+                    data-comment-id="{{ comment.id }}" 
+                    data-author="{{ comment.author.username }}">
+                <i class="fas fa-reply me-1"></i>Reply
+            </button>
+            {% if user == comment.author or user == comment.notice.classroom.teacher %}
+                <a href="{% url 'edit_notice_comment' comment.id %}" class="btn btn-sm btn-link p-0 text-decoration-none text-warning">
+                    <i class="fas fa-edit me-1"></i>Edit
+                </a>
+                <form method="POST" action="{% url 'delete_notice_comment' comment.id %}" style="display: inline;" onsubmit="return confirm('Delete this comment?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-link p-0 text-decoration-none text-danger">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </form>
+            {% endif %}
+        </div>
     </div>
 </div>
 

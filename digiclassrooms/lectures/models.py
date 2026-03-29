@@ -11,6 +11,7 @@ class Lecture(models.Model):
     title = models.CharField(max_length=200)
     youtube_link = models.URLField()
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     if TYPE_CHECKING:
         id: int
@@ -50,6 +51,8 @@ class LectureComment(models.Model):
     content = models.TextField()
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_edited = models.BooleanField(default=False)
     
     if TYPE_CHECKING:
         id: int

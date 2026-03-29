@@ -11,6 +11,19 @@
                         <h4 class="mb-1"><i class="fas fa-bullhorn me-2"></i>{{ notice.title }}</h4>
                         <small><i class="fas fa-user me-1"></i>{{ notice.author.username }} • <i class="far fa-calendar me-1"></i>{{ notice.created_at|date:"M d, Y" }}</small>
                     </div>
+                    {% if is_teacher %}
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'edit_notice' notice.pk %}" class="btn btn-sm btn-light btn-warning" style="color: #fff;">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                            <form method="POST" action="{% url 'delete_notice' notice.pk %}" style="display: inline;" onsubmit="return confirm('Delete this notice? This cannot be undone.');'">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-light" style="background-color: var(--danger-color); color: #fff;">
+                                    <i class="fas fa-trash me-1"></i>Delete
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body p-4">

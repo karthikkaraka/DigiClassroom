@@ -20,6 +20,15 @@
                 <a href="{% url 'view_submissions' assignment.pk %}" class="btn btn-info">
                     <i class="fas fa-users me-2"></i>View Submissions
                 </a>
+                <a href="{% url 'edit_assignment' assignment.pk %}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+                <form method="POST" action="{% url 'delete_assignment' assignment.pk %}" style="display: inline;" onsubmit="return confirm('Delete this assignment? This cannot be undone.');'">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </form>
                 <a href="{% url 'assignment_list' assignment.classroom.pk %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Back to List
                 </a>

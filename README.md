@@ -89,6 +89,10 @@ To set up and run DigiClassroom locally, refer to [INSTALLATION.md](INSTALLATION
 
 For email configuration (password resets, notifications), see [EMAIL_SETUP.md](EMAIL_SETUP.md).
 
+For feature details and planned enhancements, see [FEATURES.md](FEATURES.md).
+
+For implementation details of the new features, see [IMPLEMENTATION.md](IMPLEMENTATION.md).
+
 ---
 
 ## Contributing
